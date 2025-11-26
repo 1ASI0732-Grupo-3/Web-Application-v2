@@ -14,6 +14,7 @@ import StableDetails from './pages/StableDetails';
 import EditStable from './pages/EditStable';
 import Settings from './pages/Settings';
 import ApiTestPage from './pages/ApiTestPage';
+import ProductionAnalytics from './pages/ProductionAnalytics';
 import './App.css';
 
 function App() {
@@ -109,6 +110,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ApiTestPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/production-analytics" 
+              element={
+                <ProtectedRoute>
+                  <ProductionAnalytics />
                 </ProtectedRoute>
               } 
             />
