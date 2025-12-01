@@ -141,6 +141,22 @@ const StableDetails: React.FC = () => {
 
       <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+            <div className="text-red-600 mt-0.5">
+              <Icons.Exclamation />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-red-900 mb-1">Error</h4>
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+            <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 transition-colors">
+              <Icons.X />
+            </button>
+          </div>
+        )}
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
