@@ -33,6 +33,7 @@ const ProductionAnalytics: React.FC = () => {
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [stables, setStables] = useState<Stable[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [productionMode, setProductionMode] = useState<'daily' | 'monthly' | 'yearly'>('daily');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -248,7 +249,7 @@ const ProductionAnalytics: React.FC = () => {
                 </svg>
               </button>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Production Calculator
+                Análisis de Producción
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -264,7 +265,7 @@ const ProductionAnalytics: React.FC = () => {
                 onClick={handleLogout}
                 className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105 shadow-md"
               >
-                Logout
+                Cerrar Sesión
               </button>
             </div>
           </div>
@@ -276,7 +277,7 @@ const ProductionAnalytics: React.FC = () => {
         {loading ? (
           <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-12 text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
-            <p className="text-slate-700 text-lg font-medium">Loading production statistics...</p>
+            <p className="text-slate-700 text-lg font-medium">Cargando estadísticas de producción...</p>
           </div>
         ) : bovines.length === 0 ? (
           <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-12 text-center">
@@ -285,13 +286,13 @@ const ProductionAnalytics: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-3">No bovines registered yet</h3>
-            <p className="text-slate-600 mb-6">Add bovines to your stables to see production analytics and statistics</p>
+            <h3 className="text-2xl font-bold text-slate-800 mb-3">No hay bovinos registrados</h3>
+            <p className="text-slate-600 mb-6">Agrega bovinos a tus establos para ver análisis y estadísticas de producción</p>
             <button
               onClick={() => navigate('/bovines')}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold transition duration-200 transform hover:scale-105 shadow-lg"
             >
-              Go to Bovines Management
+              Ir a Gestión de Bovinos
             </button>
           </div>
         ) : (
@@ -299,19 +300,19 @@ const ProductionAnalytics: React.FC = () => {
             {/* Overview Stats Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg">
-                <p className="text-sm opacity-90">Total Bovines</p>
+                <p className="text-sm opacity-90">Total Bovinos</p>
                 <p className="text-3xl font-bold">{bovines.length}</p>
               </div>
               <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-4 text-white shadow-lg">
-                <p className="text-sm opacity-90">Total Stables</p>
+                <p className="text-sm opacity-90">Total Establos</p>
                 <p className="text-3xl font-bold">{stables.length}</p>
               </div>
               <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl p-4 text-white shadow-lg">
-                <p className="text-sm opacity-90">Total Vaccines</p>
+                <p className="text-sm opacity-90">Total Vacunas</p>
                 <p className="text-3xl font-bold">{vaccines.length}</p>
               </div>
               <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-4 text-white shadow-lg">
-                <p className="text-sm opacity-90">Avg Weight</p>
+                <p className="text-sm opacity-90">Peso Promedio</p>
                 <p className="text-3xl font-bold">{calculateAverageWeight()}</p>
                 <p className="text-xs opacity-90">kg</p>
               </div>
@@ -320,7 +321,18 @@ const ProductionAnalytics: React.FC = () => {
             {/* Production Mode Selector */}
             <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-4 mb-8">
               <div className="flex items-center justify-between">
-                <span className="text-slate-700 font-medium">View Production:</span>
+                <div className="flex items-center space-x-3">
+                  <span className="text-slate-700 font-medium">Ver Producción:</span>
+                  <button
+                    onClick={() => setShowInfoModal(true)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition duration-200 flex items-center space-x-1"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>¿Cómo se calcula?</span>
+                  </button>
+                </div>
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setProductionMode('daily')}
@@ -330,7 +342,7 @@ const ProductionAnalytics: React.FC = () => {
                         : 'bg-white/50 text-slate-700 hover:bg-white/70'
                     }`}
                   >
-                    Daily
+                    Diario
                   </button>
                   <button
                     onClick={() => setProductionMode('monthly')}
@@ -340,7 +352,7 @@ const ProductionAnalytics: React.FC = () => {
                         : 'bg-white/50 text-slate-700 hover:bg-white/70'
                     }`}
                   >
-                    Monthly
+                    Mensual
                   </button>
                   <button
                     onClick={() => setProductionMode('yearly')}
@@ -350,7 +362,7 @@ const ProductionAnalytics: React.FC = () => {
                         : 'bg-white/50 text-slate-700 hover:bg-white/70'
                     }`}
                   >
-                    Yearly
+                    Anual
                   </button>
                 </div>
               </div>
@@ -362,7 +374,7 @@ const ProductionAnalytics: React.FC = () => {
               <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6 transform hover:scale-105 transition duration-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-600 text-sm font-medium">Meat Production</p>
+                    <p className="text-slate-600 text-sm font-medium">Producción de Carne</p>
                     <p className="text-3xl font-bold text-slate-800">{calculateMeatProduction().toLocaleString()}</p>
                     <p className="text-slate-600 text-xs">Total Kg</p>
                   </div>
@@ -378,9 +390,9 @@ const ProductionAnalytics: React.FC = () => {
               <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6 transform hover:scale-105 transition duration-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-600 text-sm font-medium">Milk Production</p>
+                    <p className="text-slate-600 text-sm font-medium">Producción de Leche</p>
                     <p className="text-3xl font-bold text-slate-800">{calculateMilkProduction().toLocaleString()}</p>
-                    <p className="text-slate-600 text-xs">Liters / {productionMode}</p>
+                    <p className="text-slate-600 text-xs">Litros / {productionMode === 'daily' ? 'diario' : productionMode === 'monthly' ? 'mensual' : 'anual'}</p>
                   </div>
                   <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
                     <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -394,9 +406,9 @@ const ProductionAnalytics: React.FC = () => {
               <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6 transform hover:scale-105 transition duration-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-600 text-sm font-medium">Average Weight</p>
+                    <p className="text-slate-600 text-sm font-medium">Peso Promedio</p>
                     <p className="text-3xl font-bold text-slate-800">{calculateAverageWeight()}</p>
-                    <p className="text-slate-600 text-xs">Kg per animal</p>
+                    <p className="text-slate-600 text-xs">Kg por animal</p>
                   </div>
                   <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
                     <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,9 +422,9 @@ const ProductionAnalytics: React.FC = () => {
               <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6 transform hover:scale-105 transition duration-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-600 text-sm font-medium">Estimated Value</p>
+                    <p className="text-slate-600 text-sm font-medium">Valor Estimado</p>
                     <p className="text-3xl font-bold text-slate-800">${calculateTotalValue().toLocaleString()}</p>
-                    <p className="text-slate-600 text-xs">Production value / {productionMode}</p>
+                    <p className="text-slate-600 text-xs">Valor producción / {productionMode === 'daily' ? 'diario' : productionMode === 'monthly' ? 'mensual' : 'anual'}</p>
                   </div>
                   <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                     <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -428,7 +440,7 @@ const ProductionAnalytics: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* Bar Chart - Average Weight by Breed */}
                 <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-slate-800 mb-6">Average Weight by Breed</h3>
+                  <h3 className="text-xl font-bold text-slate-800 mb-6">Peso Promedio por Raza</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={getBreedWeightData()}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.3)" />
@@ -455,7 +467,7 @@ const ProductionAnalytics: React.FC = () => {
 
                 {/* Pie Chart - Gender Distribution */}
                 <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-slate-800 mb-6">Gender Distribution</h3>
+                  <h3 className="text-xl font-bold text-slate-800 mb-6">Distribución por Género</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
@@ -486,7 +498,7 @@ const ProductionAnalytics: React.FC = () => {
 
                 {/* Age Distribution Chart */}
                 <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6 lg:col-span-2">
-                  <h3 className="text-xl font-bold text-slate-800 mb-6">Age Distribution</h3>
+                  <h3 className="text-xl font-bold text-slate-800 mb-6">Distribución por Edad</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={getAgeDistribution()}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.3)" />
@@ -519,7 +531,7 @@ const ProductionAnalytics: React.FC = () => {
                 {/* Stables Distribution */}
                 {stables.length > 0 && getStableStats().length > 0 && (
                   <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
-                    <h3 className="text-xl font-bold text-slate-800 mb-6">🏠 Bovines by Stable</h3>
+                    <h3 className="text-xl font-bold text-slate-800 mb-6">Bovinos por Establo</h3>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={getStableStats()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.3)" />
@@ -548,7 +560,7 @@ const ProductionAnalytics: React.FC = () => {
                 {/* Vaccine Types Distribution */}
                 {vaccines.length > 0 && getVaccineStats().length > 0 && (
                   <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
-                    <h3 className="text-xl font-bold text-slate-800 mb-6">💉 Vaccine Distribution</h3>
+                    <h3 className="text-xl font-bold text-slate-800 mb-6">Distribución de Vacunas</h3>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={getVaccineStats()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.3)" />
@@ -581,7 +593,7 @@ const ProductionAnalytics: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* Top 5 Heaviest */}
                 <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-slate-800 mb-6">🏆 Top 5 Heaviest Bovines</h3>
+                  <h3 className="text-xl font-bold text-slate-800 mb-6">Top 5 Bovinos Más Pesados</h3>
                   <div className="space-y-3">
                     {getTopBovines().map((bovine, index) => (
                       <div key={bovine.id} className="flex items-center justify-between p-3 bg-white/30 rounded-lg hover:bg-white/40 transition duration-200">
@@ -609,7 +621,7 @@ const ProductionAnalytics: React.FC = () => {
 
                 {/* Breed Summary */}
                 <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-slate-800 mb-6">📊 Breed Summary</h3>
+                  <h3 className="text-xl font-bold text-slate-800 mb-6">Resumen por Raza</h3>
                   <div className="space-y-3">
                     {getBreedWeightData().map((breed, index) => {
                       const breedCount = bovines.filter(b => b.breed === breed.breed).length;
@@ -618,7 +630,7 @@ const ProductionAnalytics: React.FC = () => {
                         <div key={index} className="p-3 bg-white/30 rounded-lg">
                           <div className="flex justify-between items-center mb-2">
                             <span className="font-semibold text-slate-800">{breed.breed}</span>
-                            <span className="text-sm text-slate-600">{breedCount} animals ({breedPercentage}%)</span>
+                            <span className="text-sm text-slate-600">{breedCount} animales ({breedPercentage}%)</span>
                           </div>
                           <div className="w-full bg-white/50 rounded-full h-2">
                             <div 
@@ -626,7 +638,7 @@ const ProductionAnalytics: React.FC = () => {
                               style={{ width: `${breedPercentage}%` }}
                             ></div>
                           </div>
-                          <p className="text-xs text-slate-600 mt-1">Avg. Weight: {breed.averageWeight} kg</p>
+                          <p className="text-xs text-slate-600 mt-1">Peso Prom: {breed.averageWeight} kg</p>
                         </div>
                       );
                     })}
@@ -638,21 +650,21 @@ const ProductionAnalytics: React.FC = () => {
             {/* Animals List */}
             <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-slate-800">Animal List ({bovines.length})</h3>
+                <h3 className="text-xl font-bold text-slate-800">Lista de Animales ({bovines.length})</h3>
                 <div className="text-sm text-slate-600">
-                  Total Herd Weight: <span className="font-bold text-slate-800">{calculateMeatProduction().toLocaleString()} kg</span>
+                  Peso Total del Rebaño: <span className="font-bold text-slate-800">{calculateMeatProduction().toLocaleString()} kg</span>
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
                     <tr className="border-b border-white/20">
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Name</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Breed</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Gender</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Age</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Weight (Kg)</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Milk Prod.</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Nombre</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Raza</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Género</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Edad</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Peso (Kg)</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Prod. Leche</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -675,14 +687,14 @@ const ProductionAnalytics: React.FC = () => {
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               bovine.gender === 'Hembra' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'
                             }`}>
-                              {bovine.gender === 'Hembra' ? 'Female' : 'Male'}
+                              {bovine.gender === 'Hembra' ? 'Hembra' : 'Macho'}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-700">{age.toFixed(1)} years</td>
+                          <td className="py-3 px-4 text-slate-700">{age.toFixed(1)} años</td>
                           <td className="py-3 px-4 text-slate-800 font-semibold">{bovine.weight || 0} kg</td>
                           <td className="py-3 px-4 text-slate-700">
                             {canProduceMilk ? (
-                              <span className="text-green-600 font-medium">{dailyMilk} L/day</span>
+                              <span className="text-green-600 font-medium">{dailyMilk} L/día</span>
                             ) : (
                               <span className="text-slate-400">-</span>
                             )}
@@ -697,6 +709,159 @@ const ProductionAnalytics: React.FC = () => {
           </>
         )}
       </main>
+
+      {/* Modal Informativo */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">¿Cómo se calculan las métricas?</h2>
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  className="h-8 w-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition duration-200"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Producción de Carne */}
+              <div className="border-l-4 border-red-500 bg-red-50 p-4 rounded-r-lg">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                  <span className="h-8 w-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </span>
+                  Producción de Carne
+                </h3>
+                <p className="text-slate-700 mb-2"><strong>Fórmula:</strong> Suma total del peso de todos los bovinos registrados</p>
+                <div className="bg-white p-3 rounded-lg font-mono text-sm">
+                  Total Kg = Peso₁ + Peso₂ + ... + Peso_n
+                </div>
+                <p className="text-slate-600 text-sm mt-2">
+                  <strong>Ejemplo:</strong> Si tienes 3 bovinos de 400kg, 350kg y 450kg → <strong>1,200 kg</strong>
+                </p>
+              </div>
+
+              {/* Producción de Leche */}
+              <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-lg">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                  <span className="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                  </span>
+                  Producción de Leche
+                </h3>
+                <p className="text-slate-700 mb-2"><strong>Criterios:</strong></p>
+                <ul className="list-disc list-inside text-slate-700 space-y-1 mb-2">
+                  <li>Solo hembras mayores de 2 años producen leche</li>
+                  <li>Producción diaria según raza:</li>
+                </ul>
+                <div className="bg-white p-3 rounded-lg space-y-1 text-sm">
+                  <div className="flex justify-between"><span>Holstein:</span><strong>25 L/día</strong></div>
+                  <div className="flex justify-between"><span>Jersey:</span><strong>20 L/día</strong></div>
+                  <div className="flex justify-between"><span>Brown Swiss:</span><strong>22 L/día</strong></div>
+                  <div className="flex justify-between"><span>Guernsey:</span><strong>18 L/día</strong></div>
+                  <div className="flex justify-between"><span>Otras razas:</span><strong>10 L/día</strong></div>
+                </div>
+                <p className="text-slate-600 text-sm mt-2">
+                  <strong>Multiplicadores:</strong> Diario (×1) | Mensual (×30) | Anual (×365)
+                </p>
+                <p className="text-slate-600 text-sm">
+                  <strong>Ejemplo:</strong> 2 Holstein adultas = 2 × 25L = 50 L/día → <strong>1,500 L/mes</strong>
+                </p>
+              </div>
+
+              {/* Peso Promedio */}
+              <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                  <span className="h-8 w-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l-3-9m3 9l3-9" />
+                    </svg>
+                  </span>
+                  Peso Promedio
+                </h3>
+                <p className="text-slate-700 mb-2"><strong>Fórmula:</strong> Peso total dividido entre número de animales</p>
+                <div className="bg-white p-3 rounded-lg font-mono text-sm">
+                  Peso Promedio = (Σ Pesos) ÷ Número de Bovinos
+                </div>
+                <p className="text-slate-600 text-sm mt-2">
+                  <strong>Ejemplo:</strong> (400 + 350 + 450) ÷ 3 = <strong>400 kg</strong>
+                </p>
+              </div>
+
+              {/* Valor Estimado */}
+              <div className="border-l-4 border-purple-500 bg-purple-50 p-4 rounded-r-lg">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                  <span className="h-8 w-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                  Valor Estimado
+                </h3>
+                <p className="text-slate-700 mb-2"><strong>Fórmula:</strong> Valor de carne + Valor de leche</p>
+                <div className="bg-white p-3 rounded-lg space-y-2 text-sm">
+                  <div>
+                    <strong>Precios de referencia:</strong>
+                    <div className="flex justify-between mt-1">
+                      <span>Carne:</span>
+                      <strong>$4.5 USD por kg</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Leche:</span>
+                      <strong>$0.35 USD por litro</strong>
+                    </div>
+                  </div>
+                  <div className="border-t pt-2 font-mono text-xs">
+                    Valor Total = (Peso Total × $4.5) + (Leche × $0.35 × Multiplicador)
+                  </div>
+                </div>
+                <p className="text-slate-600 text-sm mt-2">
+                  <strong>Ejemplo (Mensual):</strong>
+                </p>
+                <ul className="text-slate-600 text-sm list-disc list-inside">
+                  <li>Carne: 1,200 kg × $4.5 = $5,400</li>
+                  <li>Leche: 50 L/día × $0.35 × 30 = $525</li>
+                  <li><strong>Total: $5,925</strong></li>
+                </ul>
+              </div>
+
+              {/* Nota importante */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <svg className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <h4 className="font-bold text-yellow-800 mb-1">Nota Importante</h4>
+                    <p className="text-yellow-700 text-sm">
+                      Si las métricas aparecen en 0, verifica que tus bovinos tengan los campos completos: 
+                      <strong> peso, género, fecha de nacimiento y raza</strong>. Solo los registros completos se incluyen en los cálculos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-gray-50 p-4 rounded-b-2xl border-t">
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold transition duration-200 transform hover:scale-105 shadow-lg"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
