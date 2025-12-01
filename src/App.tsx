@@ -13,7 +13,6 @@ import AddStable from './pages/AddStable';
 import StableDetails from './pages/StableDetails';
 import EditStable from './pages/EditStable';
 import Settings from './pages/Settings';
-import ApiTestPage from './pages/ApiTestPage';
 import ProductionAnalytics from './pages/ProductionAnalytics';
 import './App.css';
 
@@ -102,14 +101,6 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Settings />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/api-test" 
-              element={
-                <ProtectedRoute>
-                  <ApiTestPage />
                 </ProtectedRoute>
               } 
             />
