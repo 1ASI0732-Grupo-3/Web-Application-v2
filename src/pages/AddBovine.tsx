@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { bovinesApi, stablesApi } from '../services/api';
 import type { CreateBovineRequest, Stable } from '../services/api';
 
-// Iconos SVG como componentes para mantener el código limpio sin librerías externas
+// --- 1. ICONOS (Sin cambios) ---
 const Icons = {
   Cow: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>,
   Dna: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
@@ -17,6 +17,29 @@ const Icons = {
   X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
 };
 
+// --- 2. SOLUCIÓN: Componente movido FUERA de AddBovine ---
+const FormInput = ({ 
+  label, id, icon: Icon, type = "text", ...props 
+}: any) => (
+  <div className="group">
+    <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5 ml-1 transition-colors group-focus-within:text-emerald-600">
+      {label}
+    </label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500 transition-colors">
+        <Icon />
+      </div>
+      <input
+        id={id}
+        type={type}
+        className="block w-full pl-10 pr-3 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-gray-300"
+        {...props}
+      />
+    </div>
+  </div>
+);
+
+// --- 3. Componente Principal ---
 const AddBovine: React.FC = () => {
   const [formData, setFormData] = useState<CreateBovineRequest>({
     name: '',
@@ -95,28 +118,6 @@ const AddBovine: React.FC = () => {
     return formData.name && formData.gender && formData.birthDate && 
            formData.breed && formData.location && formData.stableId > 0;
   };
-
-  // Componente de Input Reutilizable para consistencia
-  const FormInput = ({ 
-    label, id, icon: Icon, type = "text", ...props 
-  }: any) => (
-    <div className="group">
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5 ml-1 transition-colors group-focus-within:text-emerald-600">
-        {label}
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500 transition-colors">
-          <Icon />
-        </div>
-        <input
-          id={id}
-          type={type}
-          className="block w-full pl-10 pr-3 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-gray-300"
-          {...props}
-        />
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-[#F0FDF4] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/50 via-teal-50/30 to-white">
@@ -205,7 +206,7 @@ const AddBovine: React.FC = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Image Upload Area - Full Width */}
+                  {/* Image Upload Area */}
                   <div className="w-full">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Bovine Image</label>
                     <div 
@@ -251,6 +252,7 @@ const AddBovine: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* USO DE FORMINPUT (Ya funciona bien) */}
                     <FormInput 
                       id="name" name="name" label="Bovine Name *" 
                       placeholder="e.g. Bessie" 
