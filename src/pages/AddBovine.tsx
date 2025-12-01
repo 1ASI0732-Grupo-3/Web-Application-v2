@@ -1,8 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { bovinesApi } from '../services/api';
-import type { CreateBovineRequest } from '../services/api';
+import { bovinesApi, stablesApi } from '../services/api';
+import type { CreateBovineRequest, Stable } from '../services/api';
+
+// Iconos SVG como componentes para mantener el código limpio sin librerías externas
+const Icons = {
+  Cow: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>,
+  Dna: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  Calendar: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  MapPin: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Home: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+  Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+  Upload: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+  ChevronLeft: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
+  X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+};
 
 const AddBovine: React.FC = () => {
   const [formData, setFormData] = useState<CreateBovineRequest>({
@@ -17,8 +30,27 @@ const AddBovine: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [stables, setStables] = useState<Stable[]>([]);
+  const [loadingStables, setLoadingStables] = useState(true);
+  
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchStables = async () => {
+      try {
+        setLoadingStables(true);
+        const stablesData = await stablesApi.getAllStables();
+        setStables(stablesData);
+      } catch (error) {
+        console.error('Error fetching stables:', error);
+        setError('Failed to load stables. Please refresh the page.');
+      } finally {
+        setLoadingStables(false);
+      }
+    };
+    fetchStables();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -33,11 +65,14 @@ const AddBovine: React.FC = () => {
     if (file) {
       setSelectedImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
+      reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,11 +81,7 @@ const AddBovine: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const submitData = {
-        ...formData,
-        bovineImg: selectedImage || undefined,
-      };
-      
+      const submitData = { ...formData, bovineImg: selectedImage || undefined };
       await bovinesApi.createBovine(submitData);
       navigate('/bovines');
     } catch (error: any) {
@@ -60,51 +91,62 @@ const AddBovine: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const handleBackToBovines = () => {
-    navigate('/bovines');
-  };
-
   const isFormValid = () => {
     return formData.name && formData.gender && formData.birthDate && 
            formData.breed && formData.location && formData.stableId > 0;
   };
 
+  // Componente de Input Reutilizable para consistencia
+  const FormInput = ({ 
+    label, id, icon: Icon, type = "text", ...props 
+  }: any) => (
+    <div className="group">
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5 ml-1 transition-colors group-focus-within:text-emerald-600">
+        {label}
+      </label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500 transition-colors">
+          <Icon />
+        </div>
+        <input
+          id={id}
+          type={type}
+          className="block w-full pl-10 pr-3 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-gray-300"
+          {...props}
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100">
+    <div className="min-h-screen bg-[#F0FDF4] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/50 via-teal-50/30 to-white">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20 sticky top-0 z-50">
+      <nav className="bg-white/70 backdrop-blur-md border-b border-emerald-100 sticky top-0 z-50 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <button 
-                onClick={handleBackToBovines}
-                className="h-10 w-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg hover:from-emerald-700 hover:to-teal-700 transition duration-200"
+                onClick={() => navigate('/bovines')}
+                className="group p-2 rounded-lg hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 transition-colors"
               >
-                <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
+                <Icons.ChevronLeft />
               </button>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                Add New Bovine
+              <h1 className="text-xl font-bold text-gray-800 tracking-tight">
+                Add New <span className="text-emerald-600">Bovine</span>
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center space-x-2">
-                <div className="h-8 w-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">
-                    {user?.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <span className="text-gray-700 font-medium">{user?.username}</span>
+            
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex flex-col items-end mr-2">
+                <span className="text-sm font-semibold text-gray-700 leading-none">{user?.username}</span>
+                <span className="text-xs text-emerald-600 font-medium">Administrator</span>
+              </div>
+              <div className="h-9 w-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-emerald-200 shadow-lg flex items-center justify-center text-white font-bold text-sm">
+                {user?.username.charAt(0).toUpperCase()}
               </div>
               <button
-                onClick={handleLogout}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105 shadow-md"
+                onClick={() => { logout(); navigate('/login'); }}
+                className="ml-2 text-sm text-gray-500 hover:text-red-500 font-medium transition-colors"
               >
                 Logout
               </button>
@@ -114,198 +156,205 @@ const AddBovine: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Register New Bovine</h2>
-            <p className="text-gray-600">Fill in the information to register a new bovine in your livestock</p>
+      <main className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: Form Header & Info */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="sticky top-24">
+              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-4">
+                Register<br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
+                  New Livestock
+                </span>
+              </h2>
+              <p className="text-gray-500 text-lg leading-relaxed mb-8">
+                Complete the details to add a new animal to your herd inventory. Ensure all mandatory fields marked with asterisks are filled correctly.
+              </p>
+              
+              {/* Status Card */}
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-emerald-100 shadow-sm">
+                <h3 className="font-semibold text-gray-800 mb-2">Quick Tips</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span>
+                    Images should be clear and well-lit.
+                  </li>
+                  <li className="flex items-center">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span>
+                    Double check the Stable ID assignment.
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+          {/* Right Column: The Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+              <div className="p-8">
+                
+                {error && (
+                  <div className="mb-6 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3">
+                    <div className="p-1 bg-red-100 rounded-full text-red-600 shrink-0">
+                      <Icons.X />
+                    </div>
+                    <p className="text-sm text-red-700 mt-0.5">{error}</p>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Name */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Bovine Name *
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition duration-200 bg-gray-50/50 hover:bg-white"
-                  placeholder="Enter bovine name"
-                />
-              </div>
-
-              {/* Gender */}
-              <div>
-                <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Gender *
-                </label>
-                <select
-                  id="gender"
-                  name="gender"
-                  required
-                  value={formData.gender}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition duration-200 bg-gray-50/50 hover:bg-white"
-                >
-                  <option value="">Select gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-
-              {/* Birth Date */}
-              <div>
-                <label htmlFor="birthDate" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Birth Date *
-                </label>
-                <input
-                  id="birthDate"
-                  name="birthDate"
-                  type="date"
-                  required
-                  value={formData.birthDate}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition duration-200 bg-gray-50/50 hover:bg-white"
-                />
-              </div>
-
-              {/* Breed */}
-              <div>
-                <label htmlFor="breed" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Breed *
-                </label>
-                <input
-                  id="breed"
-                  name="breed"
-                  type="text"
-                  required
-                  value={formData.breed}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition duration-200 bg-gray-50/50 hover:bg-white"
-                  placeholder="Enter breed (e.g., Holstein, Angus)"
-                />
-              </div>
-
-              {/* Location */}
-              <div>
-                <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Location *
-                </label>
-                <input
-                  id="location"
-                  name="location"
-                  type="text"
-                  required
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition duration-200 bg-gray-50/50 hover:bg-white"
-                  placeholder="Enter location or pasture"
-                />
-              </div>
-
-              {/* Stable ID */}
-              <div>
-                <label htmlFor="stableId" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Stable ID *
-                </label>
-                <input
-                  id="stableId"
-                  name="stableId"
-                  type="number"
-                  required
-                  min="1"
-                  value={formData.stableId || ''}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition duration-200 bg-gray-50/50 hover:bg-white"
-                  placeholder="Enter stable identification number"
-                />
-              </div>
-            </div>
-
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Bovine Image (Optional)
-              </label>
-              <div className="flex items-center space-x-6">
-                <div className="shrink-0">
-                  <div className="h-32 w-32 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center border-2 border-dashed border-emerald-300">
-                    {imagePreview ? (
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        className="h-full w-full object-cover rounded-xl"
-                      />
-                    ) : (
-                      <svg className="h-12 w-12 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 transition duration-200"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    PNG, JPG, GIF up to 10MB
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Buttons */}
-            <div className="flex space-x-4 pt-6">
-              <button
-                type="button"
-                onClick={handleBackToBovines}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-6 rounded-xl font-semibold transition duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading || !isFormValid()}
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-3 px-6 rounded-xl font-semibold transition duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Registering...
-                  </div>
-                ) : (
-                  'Register Bovine'
                 )}
-              </button>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Image Upload Area - Full Width */}
+                  <div className="w-full">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bovine Image</label>
+                    <div 
+                      className={`relative group border-2 border-dashed rounded-2xl p-8 transition-all duration-200 text-center ${
+                        imagePreview 
+                          ? 'border-emerald-200 bg-emerald-50/30' 
+                          : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
+                      }`}
+                    >
+                      {imagePreview ? (
+                        <div className="relative inline-block">
+                          <img 
+                            src={imagePreview} 
+                            alt="Preview" 
+                            className="h-48 w-full object-contain rounded-lg shadow-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute -top-3 -right-3 bg-white text-red-500 p-1.5 rounded-full shadow-lg border border-gray-100 hover:bg-red-50 transition-colors"
+                          >
+                            <Icons.X />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 cursor-pointer pointer-events-none">
+                          <div className="mx-auto h-12 w-12 text-gray-400 group-hover:text-emerald-500 transition-colors">
+                            <Icons.Upload />
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <span className="font-semibold text-emerald-600">Click to upload</span> or drag and drop
+                          </div>
+                          <p className="text-xs text-gray-400">PNG, JPG up to 10MB</p>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer ${imagePreview ? 'hidden' : ''}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormInput 
+                      id="name" name="name" label="Bovine Name *" 
+                      placeholder="e.g. Bessie" 
+                      value={formData.name} onChange={handleChange} required icon={Icons.Cow}
+                    />
+
+                    <div className="group">
+                      <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Gender *</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500">
+                          <Icons.Users />
+                        </div>
+                        <select
+                          id="gender" name="gender" required
+                          value={formData.gender} onChange={handleChange}
+                          className="block w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm appearance-none"
+                        >
+                          <option value="">Select gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <FormInput 
+                      id="birthDate" name="birthDate" label="Birth Date *" type="date"
+                      value={formData.birthDate} onChange={handleChange} required icon={Icons.Calendar}
+                    />
+
+                    <FormInput 
+                      id="breed" name="breed" label="Breed *" placeholder="e.g. Holstein"
+                      value={formData.breed} onChange={handleChange} required icon={Icons.Dna}
+                    />
+
+                    <FormInput 
+                      id="location" name="location" label="Location/Pasture *" placeholder="e.g. North Field"
+                      value={formData.location} onChange={handleChange} required icon={Icons.MapPin}
+                    />
+
+                    <div className="group">
+                      <label htmlFor="stableId" className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Assigned Stable *</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500">
+                          <Icons.Home />
+                        </div>
+                        {loadingStables ? (
+                           <div className="block w-full pl-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-400">Loading...</div>
+                        ) : (
+                          <select
+                            id="stableId" name="stableId" required
+                            value={formData.stableId || ''} onChange={handleChange}
+                            className="block w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm appearance-none"
+                          >
+                            <option value="">Select a stable</option>
+                            {stables.map((stable) => (
+                              <option key={stable.id} value={stable.id}>
+                                {stable.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="pt-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/bovines')}
+                      className="px-6 py-3 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading || !isFormValid()}
+                      className="relative px-8 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all shadow-lg shadow-emerald-500/30 disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center gap-2">
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </div>
+                      ) : 'Create Record'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </form>
+          </div>
         </div>
       </main>
     </div>

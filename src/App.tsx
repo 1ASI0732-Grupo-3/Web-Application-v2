@@ -14,6 +14,7 @@ import StableDetails from './pages/StableDetails';
 import EditStable from './pages/EditStable';
 import Settings from './pages/Settings';
 import ProductionAnalytics from './pages/ProductionAnalytics';
+import Vaccines from './pages/Vaccines';
 import './App.css';
 
 function App() {
@@ -109,6 +110,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProductionAnalytics />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/vaccines" 
+              element={
+                <ProtectedRoute>
+                  <Vaccines />
                 </ProtectedRoute>
               } 
             />

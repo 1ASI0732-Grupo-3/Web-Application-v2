@@ -185,6 +185,15 @@ export interface UpdateStableRequest {
 }
 
 // Interfaces para Vacunaciones (nuevas para VacApp)
+export interface Vaccine {
+  id: number;
+  name: string;
+  vaccineType: string;
+  vaccineDate: string;
+  vaccineImg: string;
+  bovineId: number;
+}
+
 export interface Vaccination {
   id: number;
   bovineId: number;
@@ -196,6 +205,14 @@ export interface Vaccination {
   isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateVaccineRequest {
+  name: string;
+  vaccineType: string;
+  vaccineDate: string;
+  fileData?: File;
+  bovineId: number;
 }
 
 export interface CreateVaccinationRequest {
@@ -417,45 +434,106 @@ export const stablesApi = {
 
 // ============== NUEVOS SERVICIOS PARA VACAPP ==============
 
-// Servicios para Vacunaciones (específicos de VacApp)
-export const vaccinationApi = {
-  getAllVaccinations: async (): Promise<Vaccination[]> => {
-    const response = await api.get('/vaccinations');
+// Servicios para Vacunas (específicos de VacApp)
+export const vaccinesApi = {
+  getAllVaccines: async (): Promise<Vaccine[]> => {
+    const response = await api.get('/vaccines');
     return response.data;
   },
 
-  getVaccinationsByBovine: async (bovineId: number): Promise<Vaccination[]> => {
-    const response = await api.get(`/vaccinations/bovine/${bovineId}`);
+  getVaccinesByBovine: async (bovineId: number): Promise<Vaccine[]> => {
+    const response = await api.get(`/vaccines/bovine/${bovineId}`);
+    return response.data;
+  },
+
+  createVaccine: async (data: CreateVaccineRequest): Promise<Vaccine> => {
+    const formData = new FormData();
+    formData.append('Name', data.name);
+    formData.append('VaccineType', data.vaccineType);
+    formData.append('VaccineDate', data.vaccineDate);
+    formData.append('BovineId', data.bovineId.toString());
+    
+    if (data.fileData) {
+      formData.append('FileData', data.fileData);
+    }
+
+    const response = await api.post('/vaccines', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  getVaccineById: async (id: number): Promise<Vaccine> => {
+    const response = await api.get(`/vaccines/${id}`);
+    return response.data;
+  },
+
+  updateVaccine: async (id: number, data: CreateVaccineRequest): Promise<Vaccine> => {
+    const formData = new FormData();
+    formData.append('Name', data.name);
+    formData.append('VaccineType', data.vaccineType);
+    formData.append('VaccineDate', data.vaccineDate);
+    formData.append('BovineId', data.bovineId.toString());
+    
+    if (data.fileData) {
+      formData.append('FileData', data.fileData);
+    }
+
+    const response = await api.put(`/vaccines/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  deleteVaccine: async (id: number): Promise<void> => {
+    const response = await api.delete(`/vaccines/${id}`);
+    return response.data;
+  },
+};
+
+// Servicios para Vacunaciones (específicos de VacApp) - Legacy support
+export const vaccinationApi = {
+  getAllVaccinations: async (): Promise<Vaccine[]> => {
+    const response = await api.get('/vaccines');
+    return response.data;
+  },
+
+  getVaccinationsByBovine: async (bovineId: number): Promise<Vaccine[]> => {
+    const response = await api.get(`/vaccines/bovine/${bovineId}`);
     return response.data;
   },
 
   createVaccination: async (data: CreateVaccinationRequest): Promise<Vaccination> => {
-    const response = await api.post('/vaccinations', data);
+    const response = await api.post('/vaccines', data);
     return response.data;
   },
 
   getVaccinationById: async (id: number): Promise<Vaccination> => {
-    const response = await api.get(`/vaccinations/${id}`);
+    const response = await api.get(`/vaccines/${id}`);
     return response.data;
   },
 
   updateVaccination: async (id: number, data: Partial<CreateVaccinationRequest>): Promise<Vaccination> => {
-    const response = await api.put(`/vaccinations/${id}`, data);
+    const response = await api.put(`/vaccines/${id}`, data);
     return response.data;
   },
 
   deleteVaccination: async (id: number): Promise<void> => {
-    const response = await api.delete(`/vaccinations/${id}`);
+    const response = await api.delete(`/vaccines/${id}`);
     return response.data;
   },
 
   getUpcomingVaccinations: async (): Promise<Vaccination[]> => {
-    const response = await api.get('/vaccinations/upcoming');
+    const response = await api.get('/vaccines/upcoming');
     return response.data;
   },
 
   markAsCompleted: async (id: number): Promise<Vaccination> => {
-    const response = await api.patch(`/vaccinations/${id}/complete`);
+    const response = await api.patch(`/vaccines/${id}/complete`);
     return response.data;
   },
 };
