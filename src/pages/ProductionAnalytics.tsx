@@ -38,6 +38,51 @@ const ProductionAnalytics: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Función para simular peso basado en raza, edad y género
+  const getSimulatedWeight = (bovine: Bovine): number => {
+    const age = calculateAge(bovine.birthDate);
+    const breed = bovine.breed?.toLowerCase() || '';
+    const isFemale = bovine.gender?.toLowerCase() === 'hembra' || bovine.gender?.toLowerCase() === 'female';
+    
+    // Peso base por raza (kg para adulto)
+    let baseWeight = 450;
+    
+    if (breed.includes('holstein')) baseWeight = isFemale ? 680 : 1000;
+    else if (breed.includes('angus')) baseWeight = isFemale ? 550 : 850;
+    else if (breed.includes('hereford')) baseWeight = isFemale ? 540 : 820;
+    else if (breed.includes('brahman') || breed.includes('cebu')) baseWeight = isFemale ? 500 : 800;
+    else if (breed.includes('jersey')) baseWeight = isFemale ? 400 : 650;
+    else if (breed.includes('simmental')) baseWeight = isFemale ? 600 : 950;
+    else if (breed.includes('charolais')) baseWeight = isFemale ? 650 : 1050;
+    else if (breed.includes('limousin')) baseWeight = isFemale ? 580 : 900;
+    else if (breed.includes('brown swiss') || breed.includes('pardo suizo')) baseWeight = isFemale ? 600 : 900;
+    else if (breed.includes('guernsey')) baseWeight = isFemale ? 450 : 700;
+    else if (breed.includes('nelore')) baseWeight = isFemale ? 480 : 750;
+    else if (breed.includes('gyr') || breed.includes('gir')) baseWeight = isFemale ? 400 : 600;
+    
+    // Factor de crecimiento según edad
+    let ageFactor = 1;
+    if (age < 0.5) ageFactor = 0.15;
+    else if (age < 1) ageFactor = 0.35;
+    else if (age < 1.5) ageFactor = 0.55;
+    else if (age < 2) ageFactor = 0.70;
+    else if (age < 3) ageFactor = 0.85;
+    else if (age < 5) ageFactor = 1.0;
+    else if (age < 8) ageFactor = 1.05;
+    else ageFactor = 0.95;
+    
+    // Variación para hacerlo realista (+/- 10%)
+    const variation = 0.9 + ((bovine.id % 20) / 100);
+    
+    return Math.round(baseWeight * ageFactor * variation);
+  };
+
+  // Obtener peso real o calculado
+  const getEffectiveWeight = (bovine: Bovine): number => {
+    if (bovine.weight && bovine.weight > 0) return bovine.weight;
+    return getSimulatedWeight(bovine);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -62,9 +107,7 @@ const ProductionAnalytics: React.FC = () => {
 
   // Production calculations
   const calculateMeatProduction = () => {
-    return bovines
-      .filter(b => b.weight)
-      .reduce((total, bovine) => total + (bovine.weight || 0), 0);
+    return bovines.reduce((total, bovine) => total + getEffectiveWeight(bovine), 0);
   };
 
   const calculateMilkProduction = () => {
@@ -102,14 +145,13 @@ const ProductionAnalytics: React.FC = () => {
   };
 
   const calculateAverageWeight = () => {
-    const bovinesWithWeight = bovines.filter(b => b.weight);
-    if (bovinesWithWeight.length === 0) return 0;
-    const total = bovinesWithWeight.reduce((sum, b) => sum + (b.weight || 0), 0);
-    return Math.round(total / bovinesWithWeight.length);
+    if (bovines.length === 0) return 0;
+    const total = bovines.reduce((sum, b) => sum + getEffectiveWeight(b), 0);
+    return Math.round(total / bovines.length);
   };
 
   const calculateTotalValue = () => {
-    const meatValue = calculateMeatProduction() * 4.5; // $4.5 per kg
+    const meatValue = calculateMeatProduction() * 4.5; // $4.5 por kg
     const milkDaily = bovines
       .filter(bovine => 
         (bovine.gender?.toLowerCase() === 'female' || bovine.gender?.toLowerCase() === 'hembra') &&
@@ -156,10 +198,11 @@ const ProductionAnalytics: React.FC = () => {
   const getBreedWeightData = (): BreedWeightData[] => {
     const breedMap = new Map<string, { totalWeight: number; count: number }>();
     
-    bovines.filter(b => b.weight).forEach(bovine => {
+    bovines.forEach(bovine => {
+      const weight = getEffectiveWeight(bovine);
       const existing = breedMap.get(bovine.breed) || { totalWeight: 0, count: 0 };
       breedMap.set(bovine.breed, {
-        totalWeight: existing.totalWeight + (bovine.weight || 0),
+        totalWeight: existing.totalWeight + weight,
         count: existing.count + 1
       });
     });
@@ -216,9 +259,8 @@ const ProductionAnalytics: React.FC = () => {
   };
 
   const getTopBovines = () => {
-    return bovines
-      .filter(b => b.weight)
-      .sort((a, b) => (b.weight || 0) - (a.weight || 0))
+    return [...bovines]
+      .sort((a, b) => getEffectiveWeight(b) - getEffectiveWeight(a))
       .slice(0, 5);
   };
 
@@ -320,7 +362,7 @@ const ProductionAnalytics: React.FC = () => {
 
             {/* Production Mode Selector */}
             <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-4 mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center space-x-3">
                   <span className="text-slate-700 font-medium">Ver Producción:</span>
                   <button
@@ -333,6 +375,7 @@ const ProductionAnalytics: React.FC = () => {
                     <span>¿Cómo se calcula?</span>
                   </button>
                 </div>
+
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setProductionMode('daily')}
@@ -595,27 +638,30 @@ const ProductionAnalytics: React.FC = () => {
                 <div className="bg-white/20 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6">
                   <h3 className="text-xl font-bold text-slate-800 mb-6">Top 5 Bovinos Más Pesados</h3>
                   <div className="space-y-3">
-                    {getTopBovines().map((bovine, index) => (
-                      <div key={bovine.id} className="flex items-center justify-between p-3 bg-white/30 rounded-lg hover:bg-white/40 transition duration-200">
-                        <div className="flex items-center space-x-3">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                            index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                            index === 1 ? 'bg-gray-300 text-gray-700' :
-                            index === 2 ? 'bg-orange-400 text-orange-900' :
-                            'bg-blue-200 text-blue-700'
-                          }`}>
-                            {index + 1}
+                    {getTopBovines().map((bovine, index) => {
+                      const weight = getEffectiveWeight(bovine);
+                      return (
+                        <div key={bovine.id} className="flex items-center justify-between p-3 bg-white/30 rounded-lg hover:bg-white/40 transition duration-200">
+                          <div className="flex items-center space-x-3">
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                              index === 1 ? 'bg-gray-300 text-gray-700' :
+                              index === 2 ? 'bg-orange-400 text-orange-900' :
+                              'bg-blue-200 text-blue-700'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-800">{bovine.name}</p>
+                              <p className="text-xs text-slate-600">{bovine.breed}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-slate-800">{bovine.name}</p>
-                            <p className="text-xs text-slate-600">{bovine.breed}</p>
+                          <div className="text-right">
+                            <p className="font-bold text-slate-800">{weight} kg</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-slate-800">{bovine.weight} kg</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -670,7 +716,8 @@ const ProductionAnalytics: React.FC = () => {
                   <tbody>
                     {bovines.map((bovine) => {
                       const age = calculateAge(bovine.birthDate);
-                      const canProduceMilk = bovine.gender === 'Hembra' && age >= 2;
+                      const canProduceMilk = (bovine.gender?.toLowerCase() === 'hembra' || bovine.gender?.toLowerCase() === 'female') && age >= 2;
+                      const effectiveWeight = getEffectiveWeight(bovine);
                       let dailyMilk = 0;
                       if (canProduceMilk) {
                         const breed = bovine.breed.toLowerCase();
@@ -685,13 +732,14 @@ const ProductionAnalytics: React.FC = () => {
                           <td className="py-3 px-4 text-slate-700">{bovine.breed}</td>
                           <td className="py-3 px-4 text-slate-700">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              bovine.gender === 'Hembra' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'
+                              bovine.gender?.toLowerCase() === 'hembra' || bovine.gender?.toLowerCase() === 'female' 
+                                ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'
                             }`}>
-                              {bovine.gender === 'Hembra' ? 'Hembra' : 'Macho'}
+                              {bovine.gender?.toLowerCase() === 'hembra' || bovine.gender?.toLowerCase() === 'female' ? 'Hembra' : 'Macho'}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-slate-700">{age.toFixed(1)} años</td>
-                          <td className="py-3 px-4 text-slate-800 font-semibold">{bovine.weight || 0} kg</td>
+                          <td className="py-3 px-4 text-slate-800 font-semibold">{effectiveWeight} kg</td>
                           <td className="py-3 px-4 text-slate-700">
                             {canProduceMilk ? (
                               <span className="text-green-600 font-medium">{dailyMilk} L/día</span>
